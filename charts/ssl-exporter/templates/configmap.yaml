@@ -1,0 +1,14 @@
+{{- if $.Values.configMap.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ template "namespace" . }}
+  name: {{ template "fullname" . }}
+  labels:
+    {{- include "labels" . | nindent 4 }}
+data:
+  #Prevent ConfigMap security vulnerability (CVE-2021-25742)
+  allow-snippet-annotations: "false"
+  config.yaml: |
+{{ $.Values.configMap.data | indent 4 }}
+{{- end }}

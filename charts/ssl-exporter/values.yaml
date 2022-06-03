@@ -1,0 +1,222 @@
+# Default values for ssl-exporter. Declare variables to be passed into your templates.
+
+# -- String to partially override chart name include (will maintain the release name)
+nameOverride: ""
+
+# -- String to override chart namespace
+namespaceOverride: ""
+
+# -- String to fully override chart fullname template
+fullnameOverride: ""
+
+## Image definition for ssl-exporter
+image:
+  # -- ssl-exporter qualified image repository
+  repository: ribbybibby/ssl-exporter
+  # -- ssl-export image tag
+  tag: 2.4.1
+  # -- ssl-exporter image sha
+  sha: ""
+  # -- sll-exporter image pull policy
+  pullPolicy: IfNotPresent
+
+## Configuration for sssl-exporter service
+##
+service:
+  # -- How the Service is exposed. Defaults to ClusterIP. Valid options are ClusterIP, NodePort, LoadBalancer, ExternalName
+  # ref: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+  type: ClusterIP
+  # -- Annotations for the ssl-exporter service
+  annotations: {}
+  # -- Extra labels for the ssl-exporter service
+  labels: {}
+
+  # -- ssl-exporter service port
+  port: 9219
+
+# -- (int) Number of ssl-exporter pods to load balance between
+replicaCount: 2
+
+# -- Add annotations to all the deployed resources
+annotations: {}
+
+# -- In seconds, time the given to the ssl-exporter pod needs to terminate gracefully
+terminationGracePeriodSeconds: 0
+
+# -- Specify docker-registry secret names as an array
+imagePullSecrets: []
+
+# -- Node labels for controller pod assignment
+nodeSelector: {}
+
+# -- Tolerations for controller pod assignment
+tolerations: []
+
+# -- Affinity for controller pod assignment
+affinity: {}
+
+# -- Service account for ssl-exporter to use.
+# ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+serviceAccount:
+  # -- Specifies whether a ServiceAccount should be created
+  create: true
+  # -- Name of the service account to use. If not set and create is true, a name is generated using the fullname template.
+  name:
+  # -- Annotations for service account. Evaluated as a template. Only used if create is true.
+  annotations: {}
+
+## If true, ssl-exporter cluster role and cluster role bidding will be created.
+## ClusterRole will allow get, list and watch in all namespaces to secrets
+## ClusterRoleBidding will bind serviceAccount and ClusterRole
+rbac:
+  # -- Specifies whether to install and use RBAC rules
+  create: true
+
+## Pod probes
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+##
+probes:
+  # -- Enable readinessProbe
+  enableReadinessProbe: true
+  # -- Enable livenessProbe
+  enableLivenessProbe: true
+
+  readinessProbe:
+    # -- Initial delay seconds for readinessProbe
+    initialDelaySeconds: 3
+    # -- Period seconds for readinessProbe
+    periodSeconds: 5
+    # -- Timeout seconds for readinessProbe
+    timeoutSeconds: 5
+    # -- Failure threshold for readinessProbe
+    failureThreshold: 3
+    # -- Success threshold for readinessProbe
+    successThreshold: 1
+
+  livenessProbe:
+    # -- Initial delay seconds for livenessProbe
+    initialDelaySeconds: 3
+    # -- Period seconds for livenessProbe
+    periodSeconds: 5
+    # -- Timeout seconds for livenessProbe
+    timeoutSeconds: 5
+    # -- Failure threshold for livenessProbe
+    failureThreshold: 3
+    # -- Success threshold for livenessProbe
+    successThreshold: 1
+
+## Security context and resource configuration following kubesec and datree recomendations
+## ref: https://kubesec.io/
+## ref: https://hub.datree.io/built-in-rules
+securityContext:
+  # -- Enabled ssl-expoeter container Security Context
+  enabled: true
+  definition:
+    ## When using OpenShift runAsUser and runAsGroup can be commneted
+    ## OpenShift will executed container with random user id based in the namespace annotation: openshift.io/sa.scc.uid-range
+    ## ref: https://docs.openshift.com/container-platform/4.6/authentication/managing-security-context-constraints.html
+    ## If Kubesec complience is required when using OpenShift, uncomment the bellow lines and adjust the IDs
+    ## ref: https://kubesec.io/basics/containers-securitycontext-runasuser
+    runAsUser: 10001
+    runAsGroup: 10001
+    # -- Set pod Security Context runAsNonRoot
+    runAsNonRoot: true
+    # -- Allows the pod to mount the RootFS as ReadOnly
+    readOnlyRootFilesystem: true
+    # -- Enables privilege Escalation context for the pod.
+    allowPrivilegeEscalation: false
+    capabilities:
+      # -- Drop capabilities for the securityContext
+      drop:
+        - "ALL"
+
+## Compute Resources required by the container
+## ref: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+resources:
+  # -- Enable resources restrictions to the ssl-exporter container
+  enabled: true
+  definition:
+    # -- The resources limits for the container
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    # -- The requested resources for the container
+    requests:
+      cpu: 200m
+      memory: 128Mi
+
+## TLS secret to be used by custom tls_config
+tlsConfigSecret:
+  # -- Enable a custom secret to be mounted
+  enabled: false
+  # -- Secret name to be mounted. Secret must exists in the same namespace where the chart is deployed.
+  secretName: ""
+  # -- Path where the secret will be mounted inside the container
+  mountPath: "/etc/tls"
+
+## Modules configuration
+## ref: https://github.com/ribbybibby/ssl_exporter#configuration-file
+configMap:
+  # -- Enable ssl-exporter modules configuration to be mounted as volume config map.
+  enabled: true
+  # -- ssl-exporter modules configuration
+  data: |
+    modules:
+      https:
+        prober: https
+        tls_config:
+          insecure_skip_verify: true
+      tls:
+        prober: tcp
+        tls_config:
+          insecure_skip_verify: true
+      smtp:
+        prober: tcp
+        tcp:
+          starttls: smtp
+        tls_config:
+          insecure_skip_verify: true
+      kubernetes:
+        prober: kubernetes
+      https_renegotiation:
+        prober: https
+        tls_config:
+          renegotiation: freely
+      tcp:
+        prober: tcp
+      tcp_smtp_starttls:
+        prober: tcp
+        tcp:
+          starttls: smtp
+      file:
+        prober: file
+      # https_proxy:
+      #   prober: https
+      #   https:
+      #     proxy_url: "socks5://localhost:8123"
+      # https_timeout:
+      #   prober: https
+      #   timeout: 3s
+      # tcp_servername:
+      #   prober: tcp
+      #   tls_config:
+      #     server_name: example.com
+      # tcp_client_auth:
+      #   prober: tcp
+      #   tls_config:
+      #     ca_file: /etc/tls/ca.crt
+      #     cert_file: /etc/tls/tls.crt
+      #     key_file: /etc/tls/tls.key
+      # file_ca_certificates:
+      #   prober: file
+      #   target: /etc/ssl/certs/ca-certificates.crt
+      # kubernetes_kubeconfig:
+      #   prober: kubernetes
+      #   kubernetes:
+      #     kubeconfig: /root/.kube/config
+      # kubeconfig:
+      #   prober: kubeconfig
+
+prometheusOperator:
+  # -- Enable deployment of sample prometheus probes
+  enableExampleProbes: false
