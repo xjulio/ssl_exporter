@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  ssl-exporter:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2022-06-03T05:01:01.523457+01:00"
+    description: A Helm chart for SSL Exporter
+    digest: 64a613b9aeb978d4f191e046d3322293738f56f3bf88bd3679aa836468e60479
+    name: ssl-exporter
+    type: application
+    urls:
+    - https://github.com/xjulio/ssl_exporter/releases/download/ssl-exporter-2.4.1/ssl-exporter-2.4.1.tgz
+    version: 2.4.1
+generated: "2022-06-03T05:01:01.523467+01:00"
